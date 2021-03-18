@@ -41,7 +41,7 @@
 // @param topic {symbol}: Topic to subscribe.
 // @note
 // Replacement of `.kfk.Sub`.
-.kafka.subscribe:LIBPATH_ (`subscribe; 2);
+.kafka.subscribe_impl:LIBPATH_ (`subscribe; 2);
 
 // @kind function
 // @category Consumer
@@ -49,4 +49,32 @@
 // @param consumer_idx {int}: Index of client (consumer) in `CLIENTS`.
 // @note
 // Replacement of `.kfk.Unsub`.
-.kafka.unsubscribe:LIBPATH_ (`unsubscribe; 1);
+.kafka.unsubscribe_impl:LIBPATH_ (`unsubscribe; 1);
+
+.kafka.CONSUMER_SUBSCRIPTION:(`int$())!();
+
+.kafka.subscribe:{[consumer_idx; topic]
+  .kafka.subscribe_impl[consumer_idx; topic];
+  // Add the new subscription to the map.
+  .kafka.CONSUMER_SUBSCRIPTION[consumer_idx],: topic;
+ }
+
+.kafka.unsubscribe:{[consumer_idx]
+  .kafka.CONSUMER_SUBSCRIPTION _: consumer_idx;
+  .kafka.unsubscribe_impl[consumer_idx]
+ }
+
+.kafka.startConsume_impl: LIBPATH_ (`start_consume; 3);
+.kafka.stopConsume_impl: LIBPATH_ (`stop_consume; 2);
+
+.kafka.startConsume:{[consumer_idx;topic;partition;offset]
+  topic_idx: .kafka.TOPICS topic;
+  .kafka.startConsume_impl[topic_idx; partition; offset];
+  .kafka.CONSUMER_SUBSCRIPTION[consumer_idx],: topic;
+ }
+
+.kafka.stopConsume:{[consumer_idx;topic;partition]
+  topic_idx: .kafka.TOPICS topic;
+  .kafka.stopConsume_impl[topic_idx; partition];
+  .kafka.CONSUMER_SUBSCRIPTION[consumer_idx]: .kafka.CONSUMER_SUBSCRIPTION[consumer_idx] except topic;
+ }

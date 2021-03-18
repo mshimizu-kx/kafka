@@ -36,25 +36,6 @@ EXP K subscribe(K consumer_idx, K topic){
     return krr((S)rd_kafka_err2str(error));
   }
   
-  /*
-  if(partition_to_offset->t == XD){
-    // Map from topic partition to offset was provided
-    if(!check_qtype("IJ", kK(partition_to_offset)[0], kK(partition_to_offset)[1])){
-      // Map has wrong types
-      return krr((S) "map from partition to offset must have (int; long) type.");
-    }
-    // Add given topic and partitions to existing list and set offsets 
-    extend_topic_partition_list_and_set_offset_for_topic(topic->s, partition_to_offset, topic_partitions);
-  }
-  else{
-    // Topic partitions were provided
-    for(J i= 0; i < partition_to_offset->n; ++i){
-      // Add topic partitions to existing list
-      rd_kafka_topic_partition_list_add(topic_partitions, topic->s, kI(partition_to_offset)[i]);
-    }
-  }
-  */
-  
   // Add topic partitions to existing list. Only topic makes an effect to subscribe.
   rd_kafka_topic_partition_list_add(topic_partitions, topic->s, 0);
 
@@ -98,6 +79,46 @@ EXP K unsubscribe(K consumer_idx){
   return KNULL;
 }
 
+EXP K start_consume(K topic_idx, K partition, K offset){
+
+  if(!check_qtype("iij", topic_idx, partition, offset)){
+    // Wrong type arguments.
+    return krr("consumer index, partition, offset must be (int; int; long) types.");
+  }
+
+  rd_kafka_topic_t *topic_handle=index_to_topic_handle(topic_idx);
+  if(!topic_handle){
+    // Null pointer (`krr`). Error in `index_to_topic_handle()`.
+    return (K) topic_handle;
+  }
+
+  if(0 != rd_kafka_consume_start(topic_handle, partition->i, offset->j)){
+    // Failed to start consumption.
+    return krr((S)rd_kafka_err2str(rd_kafka_last_error()));
+  }
+    
+  return KNULL;
+}
+
+EXP K stop_consume(K topic_idx, K partition){
+  rd_kafka_topic_t *rkt;
+  if(!check_qtype("ii", topic_idx, partition)){
+    return krr("topic index and partition must be (int; int) types.");
+  }
+
+  rd_kafka_topic_t *topic_handle=index_to_topic_handle(topic_idx);
+  if(!topic_handle){
+    // Null pointer (`krr`). Error in `index_to_topic_handle()`.
+    return (K) topic_handle;
+  }
+
+  if(0 != rd_kafka_consume_stop(topic_handle, partition->i)){
+    // Failed to stop consumption.
+    return krr((S)rd_kafka_err2str(rd_kafka_last_error()));
+  }
+
+  return KNULL;
+}
 
 /**
  * @brief Get current subscription information for a consumer.

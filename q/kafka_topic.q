@@ -16,6 +16,8 @@
 // @brief Mapping between producer and the topic indices.
 .kafka.PRODUCER_TOPIC_MAP:(`int$())!();
 
+.kafka.TOPICS:(`symbol$())!`int$();
+
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 //                    Private Functions                  //
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++//
@@ -73,9 +75,12 @@
 // @note
 // Replacement of `.kfk.Topic`
 .kafka.newTopic:{[producer_idx;topic;config]
-  topic:.kafka.newTopic_impl[producer_idx; topic; config];
-  .kafka.PRODUCER_TOPIC_MAP[producer_idx],: topic;
-  topic
+  topic_idx:.kafka.newTopic_impl[producer_idx; topic; config];
+  // Add the topic and its creator to the map.
+  .kafka.PRODUCER_TOPIC_MAP[producer_idx],: topic_idx;
+  // Add the topic-index pair to the map.
+  .kafka.TOPICS[topic]:topic_idx;
+  topic_idx
  };
 
 // @private
